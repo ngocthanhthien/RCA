@@ -636,7 +636,28 @@ button.user-pill:hover{background:rgba(255,255,255,0.3);}
 
     <div class="panel" id="g-login">
       <h2>🔑 Đăng nhập &amp; phân quyền</h2>
-      <table class="guide-table">
+      <div class="cloud-only" style="display:none;">
+        <table class="guide-table">
+          <tr><th>Vai trò</th><th>Cách đăng nhập</th><th>Được phép làm gì</th></tr>
+          <tr>
+            <td><b>Chỉ xem</b></td>
+            <td>Màn hình đầu tiên → nhập <b>mật khẩu chung</b> (hỏi Admin)</td>
+            <td>Xem mọi RCA, hành động, biểu đồ; xuất báo cáo. Không thêm/sửa được gì</td>
+          </tr>
+          <tr>
+            <td><b>Leader</b></td>
+            <td>Tài khoản riêng: bấm tên ở góc phải (hoặc "Đăng nhập tài khoản riêng" ở màn hình đầu) → tên đăng nhập + mật khẩu do Admin cấp</td>
+            <td>Thêm RCA mới; sửa/thêm hành động cho RCA mình đứng tên Leader hoặc có tên trong PIC; cập nhật trạng thái hành động</td>
+          </tr>
+          <tr>
+            <td><b>Admin</b></td>
+            <td>Tài khoản riêng vai trò Admin, hoặc Google của chủ dự án</td>
+            <td>Toàn quyền + tab "⚙️ Cài đặt" và "🛡 Người dùng" (tạo tài khoản, đổi vai trò, khoá/mở, đổi mật khẩu)</td>
+          </tr>
+        </table>
+        <div class="guide-callout tip">💡 <span>Dữ liệu dùng chung qua Firebase: mọi thay đổi hiện ngay trên máy người khác. Chưa có tài khoản riêng hoặc quên mật khẩu → liên hệ Admin.</span></div>
+      </div>
+      <table class="guide-table local-only">
         <tr><th>Vai trò</th><th>Cách đăng nhập</th><th>Được phép làm gì</th></tr>
         <tr>
           <td><b>Leader</b></td>
@@ -654,7 +675,7 @@ button.user-pill:hover{background:rgba(255,255,255,0.3);}
           <td>Chỉ xem, không thêm/sửa được gì</td>
         </tr>
       </table>
-      <div class="guide-callout warn">⚠️ <span>Nếu bạn là Leader mới, chưa từng đứng tên RCA nào thì tên sẽ chưa có trong danh sách đăng nhập — nhờ Admin vào tab Cài đặt → "Danh sách Leader" thêm tên bạn vào.</span></div>
+      <div class="guide-callout warn local-only">⚠️ <span>Nếu bạn là Leader mới, chưa từng đứng tên RCA nào thì tên sẽ chưa có trong danh sách đăng nhập — nhờ Admin vào tab Cài đặt → "Danh sách Leader" thêm tên bạn vào.</span></div>
     </div>
 
     <div class="panel" id="g-rca">
@@ -4137,6 +4158,8 @@ function init(){
     // Khoá màn hình ngay từ đầu — chỉ mở khi Firebase xác nhận đăng nhập
     document.getElementById('authGate').classList.add('show');
     document.getElementById('appFooter').textContent = 'RCA Tracking App · dữ liệu đồng bộ qua Firebase · bản sao offline lưu trên trình duyệt';
+    document.querySelectorAll('.cloud-only').forEach(el=>{ el.style.display = ''; });
+    document.querySelectorAll('.local-only').forEach(el=>{ el.style.display = 'none'; });
   } else {
     loadSession();
   }

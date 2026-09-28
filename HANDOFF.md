@@ -2,7 +2,7 @@
 
 Tài liệu bàn giao cho **RCA Tracking App** — ứng dụng quản lý RCA (Root Cause Analysis) & Kế hoạch hành động khắc phục cho ILD Coffee Vietnam.
 
-- **File chính**: `RCA Tracking App.html` — **1 file HTML duy nhất**, tự chứa toàn bộ HTML/CSS/JS + dữ liệu gốc, chạy 100% offline (mở trực tiếp bằng trình duyệt, không cần server/cài đặt).
+- **File chính**: `index.html` (GitHub Pages: https://ngocthanhthien.github.io/RCA/) — **1 file HTML duy nhất**, tự chứa toàn bộ HTML/CSS/JS + dữ liệu gốc, chạy 100% offline (mở trực tiếp bằng trình duyệt, không cần server/cài đặt).
 - **Kích thước hiện tại**: ~3.400 dòng, ~300KB.
 - **Không dùng framework, không dùng thư viện ngoài, không build step.** Vanilla HTML/CSS/JS thuần, mọi thứ nằm trong 1 file để dễ copy/chia sẻ/mở lại nhiều năm sau mà không sợ mất phụ thuộc.
 
@@ -10,7 +10,7 @@ Tài liệu bàn giao cho **RCA Tracking App** — ứng dụng quản lý RCA (
 
 ## 1. Cách chạy / mở app
 
-Double-click `RCA Tracking App.html` → mở bằng **Google Chrome hoặc Microsoft Edge** (bắt buộc cho các tính năng Evidence/Đồng bộ thư mục — xem mục 6). Firefox/Safari vẫn dùng được phần lớn tính năng, chỉ thiếu 2 tính năng đó.
+Double-click `index.html` → mở bằng **Google Chrome hoặc Microsoft Edge** (bắt buộc cho các tính năng Evidence/Đồng bộ thư mục — xem mục 6). Firefox/Safari vẫn dùng được phần lớn tính năng, chỉ thiếu 2 tính năng đó.
 
 Không cần cài gì thêm, không cần internet (trừ khi dùng font hệ thống lạ — không áp dụng ở đây).
 
@@ -123,6 +123,28 @@ Mặc định lấy từ `DEFAULT_FUNCTIONS/DEFAULT_DEPTS/DEFAULT_CATEGORIES/DEF
 | **Khách** (chưa đăng nhập) | — | Chỉ xem |
 
 Phiên đăng nhập lưu ở `sessionStorage` (mất khi đóng tab/trình duyệt, không phải `localStorage`).
+
+---
+
+## 5b. Chế độ Firebase (đăng nhập tài khoản + dữ liệu dùng chung) — thêm 28/09/2026
+
+Bật khi hằng `FIREBASE_CONFIG` (section **CLOUD**, ngay sau AUTH) có `apiKey`. Để `null` → app chạy y như mục 5 (localStorage + mật khẩu Admin cục bộ). Mô phỏng theo Sensory-App nhưng **project Firebase riêng**.
+
+- **Đăng nhập 2 cấp**: màn hình khoá ban đầu hỏi **mật khẩu chung** (tài khoản Firebase `viewer@ild-rca.local`, vai trò **Chỉ xem**). Tài khoản riêng `tên@ild-rca.local` (Leader/Admin) đăng nhập ở nút tên góc phải hoặc link "tài khoản riêng" trên màn hình khoá. Chủ dự án `dangthanhbinh53@gmail.com` đăng nhập Google, luôn là Admin.
+- **Hồ sơ quyền** `rca_users/{uid}`: `{username, email, displayName, leaderName, role: viewer|leader|admin, active, shared, createdAt, createdBy}`. `leaderName` phải trùng tên trong cột Leader/PIC — `authApply()` gán `currentUser = {role, name: leaderName}` nên toàn bộ `canEditRca/canEditAction…` cũ dùng lại nguyên vẹn. Viewer → `currentUser = null`.
+- **Tab 🛡 Người dùng** (Admin): tạo/đổi mật khẩu chung, tạo tài khoản riêng, đổi vai trò, sửa tên Leader, khoá/mở, đổi mật khẩu (cần biết mật khẩu cũ — giới hạn gói Spark), xoá quyền (tài khoản Auth vẫn còn, xoá hẳn ở Console). Tạo/đổi mật khẩu dùng app Firebase phụ in-memory (`authSecondary`) để không đăng xuất Admin.
+- **Dữ liệu**: `rca_records/{id}`, `rca_actions/{id}`, `rca_meta/settings` (field `_updatedAt/_updatedBy` là metadata, bị bỏ khi đọc). `persist()` → `cloudSchedulePush()` (debounce 400ms) so JSON chuẩn hoá (`stableJson`) với `CLOUD.known` → chỉ ghi document đổi; Admin mới phát lệnh xoá và ghi settings. `onSnapshot` 3 collection → ghi đè `state` + `persist(true)` (chỉ cache localStorage) + `cloudRenderAll()`. Offline do Firestore `persistentLocalCache` tự xếp hàng ghi.
+- **Lần đầu**: Firebase trống → chủ dự án/Admin được hỏi đẩy dữ liệu trên máy lên (hoặc nút "Đẩy dữ liệu lên Firebase (lần đầu)" ở tab Dữ liệu & Cấu hình). Collection rỗng mà chưa từng có dữ liệu thì **không** xoá state trên máy.
+- **Quyền thật** ở `firestore.rules` (trong repo): thành viên đọc; Leader/Admin tạo/sửa RCA & Action; chỉ Admin xoá, ghi `rca_meta`, quản lý `rca_users`. Giới hạn: Rules chưa kiểm "Leader chỉ sửa RCA có tên mình" — việc này chỉ do giao diện chặn.
+- Xung đột: ghi đè theo từng bản ghi (bản lưu sau thắng) — đủ cho quy mô hiện tại, không có gộp 3 chiều như Sensory.
+- Evidence, đồng bộ thư mục, JSON backup vẫn chạy cục bộ như cũ.
+
+### Cài đặt Firebase (1 lần)
+1. Firebase Console → tạo project mới → thêm **Web app** → copy `firebaseConfig` dán vào `const FIREBASE_CONFIG = {...}` trong `index.html`.
+2. Authentication → Sign-in method: bật **Email/Password** và **Google**. Settings → Authorized domains: thêm `ngocthanhthien.github.io`.
+3. Firestore Database → Create database (location châu Á) → tab Rules: dán nội dung `firestore.rules` → Publish.
+4. Push `index.html` lên GitHub, mở `https://ngocthanhthien.github.io/RCA/` → "Đăng nhập tài khoản riêng" → Google (chủ dự án) → đồng ý đẩy dữ liệu lần đầu (nếu dữ liệu mới nhất ở file JSON: Huỷ → Phục hồi JSON → bấm nút đẩy ở tab Dữ liệu & Cấu hình).
+5. Tab 🛡 Người dùng: tạo mật khẩu chung + tài khoản Leader/Admin.
 
 ---
 
