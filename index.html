@@ -412,6 +412,37 @@ footer.foot{text-align:center;padding:16px;color:var(--muted);font-size:13.5px;f
 .view-block{margin-bottom:16px;}
 .view-block .view-label{color:var(--accent);font-weight:800;font-size:12.5px;text-transform:uppercase;letter-spacing:.3px;margin-bottom:5px;}
 .view-text{white-space:pre-wrap;font-size:14.5px;line-height:1.55;font-weight:600;background:var(--panel-2);border-radius:8px;padding:11px 13px;border:1px solid var(--border);}
+
+/* cloud: màn hình đăng nhập (gate) + tài khoản + quản lý người dùng */
+button.user-pill{cursor:pointer;font-family:inherit;}
+button.user-pill:hover{background:rgba(255,255,255,0.3);}
+.auth-gate{position:fixed;inset:0;z-index:150;background:var(--bg);display:none;align-items:center;justify-content:center;padding:16px;overflow-y:auto;}
+.auth-gate.show{display:flex;}
+.auth-card{
+  background:var(--panel);border:1.5px solid var(--border);border-radius:20px;box-shadow:var(--shadow-lg);
+  width:100%;max-width:380px;padding:28px 24px;display:flex;flex-direction:column;gap:10px;
+}
+.auth-card .auth-logo{
+  width:56px;height:56px;border-radius:16px;background:var(--gradient-accent);color:#fff;
+  display:flex;align-items:center;justify-content:center;font-size:28px;align-self:center;
+}
+.auth-card h2{margin:4px 0 0;text-align:center;font-size:22px;font-weight:800;}
+.auth-card .auth-sub{margin:0 0 6px;text-align:center;color:var(--muted);font-size:14px;font-weight:600;}
+.auth-card input{
+  border:1.5px solid var(--border);background:var(--panel);color:var(--text);width:100%;
+  border-radius:var(--radius-sm);padding:10px 12px;font-size:15px;font-family:inherit;font-weight:600;
+}
+.auth-card input:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft);}
+.auth-card .btn{width:100%;justify-content:center;}
+.auth-card .auth-link{background:none;border:none;color:var(--accent);font-weight:700;font-size:13.5px;cursor:pointer;font-family:inherit;padding:4px;}
+.auth-err{color:var(--bad);font-size:13.5px;font-weight:700;min-height:18px;}
+.users-form{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px 12px;align-items:end;}
+.users-form .field input,.users-form .field select{width:100%;}
+#view-users table{min-width:880px;}
+#view-users td{vertical-align:middle;}
+#view-users .user-actions{display:flex;gap:4px;flex-wrap:wrap;}
+.cloud-status-grid{display:grid;grid-template-columns:auto 1fr;gap:6px 14px;font-size:14.5px;margin-bottom:12px;}
+.cloud-status-grid span:nth-child(odd){color:var(--muted);font-weight:800;}
 </style>
 </head>
 <body>
@@ -447,6 +478,7 @@ footer.foot{text-align:center;padding:16px;color:var(--muted);font-size:13.5px;f
   <button class="tab-btn" data-tab="guide">📖 Hướng dẫn sử dụng</button>
   <button class="tab-btn" data-tab="data">🗂 Dữ liệu &amp; Cấu hình</button>
   <button class="tab-btn" data-tab="settings" id="tabBtnSettings" style="display:none;">⚙️ Cài đặt</button>
+  <button class="tab-btn" data-tab="users" id="tabBtnUsers" style="display:none;">🛡 Người dùng</button>
 </nav>
 
 <main>
@@ -695,6 +727,10 @@ footer.foot{text-align:center;padding:16px;color:var(--muted);font-size:13.5px;f
 
   <!-- ============ DATA / SETTINGS ============ -->
   <section class="view" id="view-data">
+    <div class="panel" id="cloudPanel" style="display:none;">
+      <h2>☁️ Đồng bộ Firebase</h2>
+      <div id="cloudStatus"></div>
+    </div>
     <div class="grid-2">
       <div class="panel">
         <h2>Sao lưu &amp; Phục hồi dữ liệu</h2>
@@ -742,7 +778,7 @@ footer.foot{text-align:center;padding:16px;color:var(--muted);font-size:13.5px;f
 
   <!-- ============ SETTINGS (Admin only) ============ -->
   <section class="view" id="view-settings">
-    <div class="panel">
+    <div class="panel" id="adminPasswordPanel">
       <h2>🔑 Đổi mật khẩu Admin</h2>
       <div class="form-grid">
         <div class="field"><label>Mật khẩu hiện tại</label><input type="password" id="set_currentPass" autocomplete="off"></div>
@@ -811,9 +847,14 @@ footer.foot{text-align:center;padding:16px;color:var(--muted);font-size:13.5px;f
     </div>
   </section>
 
+  <!-- ============ USERS (Admin only, chế độ Firebase) ============ -->
+  <section class="view" id="view-users">
+    <div id="usersBody"></div>
+  </section>
+
 </main>
 
-<footer class="foot">RCA Tracking App · dữ liệu lưu cục bộ trên trình duyệt · không gửi dữ liệu ra ngoài</footer>
+<footer class="foot" id="appFooter">RCA Tracking App · dữ liệu lưu cục bộ trên trình duyệt · không gửi dữ liệu ra ngoài</footer>
 </div>
 
 <!-- RCA modal -->
@@ -1068,6 +1109,34 @@ footer.foot{text-align:center;padding:16px;color:var(--muted);font-size:13.5px;f
   </div>
 </div>
 
+<!-- Tài khoản (chế độ Firebase) -->
+<div class="modal-overlay" id="accountModalOverlay">
+  <div class="modal" style="max-width:420px;">
+    <div class="modal-head">
+      <h3>Tài khoản</h3>
+      <button class="close-x" data-close="accountModalOverlay">✕</button>
+    </div>
+    <div class="modal-body" id="accountBody"></div>
+    <div class="modal-foot" id="accountFoot"></div>
+  </div>
+</div>
+
+<!-- Màn hình đăng nhập (chế độ Firebase) -->
+<div class="auth-gate" id="authGate">
+  <div class="auth-card">
+    <div class="auth-logo">☕</div>
+    <h2>RCA Tracking App</h2>
+    <p class="auth-sub" id="gateSub">Đang kết nối…</p>
+    <div id="gateUserRow" style="display:none;"><input id="gateUser" placeholder="Tên đăng nhập" autocomplete="username" autocapitalize="off"></div>
+    <input id="gatePass" type="password" placeholder="Mật khẩu" autocomplete="current-password">
+    <div class="auth-err" id="gateErr"></div>
+    <button class="btn btn-primary" id="gateBtn">Đăng nhập</button>
+    <button class="btn" id="gateGoogle" style="display:none;">Đăng nhập Google (chủ dự án)</button>
+    <button class="btn" id="gateOffline" style="display:none;">Xem dữ liệu offline (chỉ xem)</button>
+    <button class="auth-link" id="gateToggle"></button>
+  </div>
+</div>
+
 <datalist id="leaderList"></datalist>
 <datalist id="picList"></datalist>
 <datalist id="defectModeList"></datalist>
@@ -1155,9 +1224,12 @@ function loadAdminPassword(){
     if(saved) ADMIN_PASSWORD = saved;
   }catch(e){ /* ignore */ }
 }
-function persist(){
-  localStorage.setItem(STORAGE_KEY, JSON.stringify({rcaList: state.rcaList, actionList: state.actionList, settings: state.settings}));
+/* skipCloud=true khi dữ liệu vừa nhận TỪ Firebase (chỉ ghi cache localStorage, không đẩy ngược lên) */
+function persist(skipCloud){
+  try{ localStorage.setItem(STORAGE_KEY, JSON.stringify({rcaList: state.rcaList, actionList: state.actionList, settings: state.settings})); }
+  catch(e){ console.warn('localStorage write failed', e); }
   if(typeof syncDirHandle !== 'undefined' && syncDirHandle) syncToFolder(true);
+  if(!skipCloud && CLOUD_ENABLED) cloudSchedulePush();
 }
 
 /* ================= AUTH ================= */
@@ -1212,6 +1284,7 @@ function userCanSaveAction(data){
   return false;
 }
 function doLogout(){
+  if(CLOUD_ENABLED){ authLogout(); return; }
   currentUser = null;
   saveSession();
   renderAuthBox();
@@ -1220,6 +1293,13 @@ function doLogout(){
 }
 function renderAuthBox(){
   const el = document.getElementById('authBox');
+  if(CLOUD_ENABLED){
+    const p = AUTH.profile;
+    if(!p){ el.innerHTML = ''; return; }
+    el.innerHTML = `<button type="button" class="user-pill" id="btnAccount" title="Tài khoản · đăng nhập tài khoản riêng">👤 ${escapeHtml(p.displayName)} <span class="role-tag">${escapeHtml(authRoleLabel(p))}</span></button>`;
+    document.getElementById('btnAccount').addEventListener('click', authOpenAccount);
+    return;
+  }
   if(!currentUser){
     el.innerHTML = `<button class="btn btn-ghost btn-sm" id="btnOpenLogin">👤 Đăng nhập</button>`;
     document.getElementById('btnOpenLogin').addEventListener('click', openLoginModal);
@@ -1236,6 +1316,7 @@ function populateLoginLeaderSelect(){
   sel.innerHTML = leaders.map(l=>`<option value="${escapeHtml(l)}">${escapeHtml(l)}</option>`).join('');
 }
 function openLoginModal(){
+  if(CLOUD_ENABLED){ authOpenAccount(); return; }
   populateLoginLeaderSelect();
   document.getElementById('loginAdminPass').value = '';
   document.getElementById('loginError').style.display = 'none';
@@ -1264,14 +1345,18 @@ function applyPermissionUI(){
   importBtn.disabled = !admin;
   importBtn.title = admin ? '' : 'Chỉ Admin mới có quyền thao tác này';
 
-  const settingsTabBtn = document.getElementById('tabBtnSettings');
-  settingsTabBtn.style.display = admin ? '' : 'none';
-  if(!admin && document.getElementById('view-settings').classList.contains('active')){
-    settingsTabBtn.classList.remove('active');
-    document.getElementById('view-settings').classList.remove('active');
-    document.querySelector('.tab-btn[data-tab="dashboard"]').classList.add('active');
-    document.getElementById('view-dashboard').classList.add('active');
-  }
+  document.getElementById('tabBtnSettings').style.display = admin ? '' : 'none';
+  document.getElementById('tabBtnUsers').style.display = (admin && CLOUD_ENABLED) ? '' : 'none';
+  // Mật khẩu Admin cục bộ chỉ dùng ở chế độ không có Firebase
+  document.getElementById('adminPasswordPanel').style.display = CLOUD_ENABLED ? 'none' : '';
+  ['settings','users'].forEach(tab=>{
+    if(!admin && document.getElementById('view-'+tab).classList.contains('active')){
+      document.querySelector(`.tab-btn[data-tab="${tab}"]`).classList.remove('active');
+      document.getElementById('view-'+tab).classList.remove('active');
+      document.querySelector('.tab-btn[data-tab="dashboard"]').classList.add('active');
+      document.getElementById('view-dashboard').classList.add('active');
+    }
+  });
   if(admin) renderSettingsTab();
 }
 document.getElementById('loginTabAdmin').addEventListener('click', ()=>switchLoginTab('admin'));
@@ -1307,6 +1392,614 @@ document.getElementById('btnDoLogin').addEventListener('click', ()=>{
   closeModal('loginModalOverlay');
   toast(role==='admin' ? 'Đăng nhập Admin thành công' : `Đăng nhập với tên "${currentUser.name}" thành công`);
 });
+
+/* ================= CLOUD (Firebase Auth + Firestore) =================
+   Bật khi FIREBASE_CONFIG có apiKey. Khi đó:
+   - Màn hình đăng nhập 2 cấp: mật khẩu chung (tài khoản "viewer", CHỈ XEM) hoặc tài khoản riêng (Leader/Admin) / Google của chủ dự án.
+   - Dữ liệu chung nằm trên Firestore: rca_records/{id}, rca_actions/{id}, rca_meta/settings. localStorage chỉ còn là bản sao offline.
+   - persist() → cloudSchedulePush(): so sánh state với bản đã biết trên cloud (CLOUD.known), chỉ ghi document thay đổi.
+   - onSnapshot nhận thay đổi từ người khác → ghi đè state + render lại. Ghi khi mất mạng được Firestore tự xếp hàng (persistentLocalCache).
+   - Hồ sơ quyền: rca_users/{uid} = {username, email, displayName, leaderName, role: viewer|leader|admin, active, shared}.
+   Quyền thật do Firestore Rules kiểm tra (file firestore.rules); UI chỉ ẩn/hiện.
+   Để FIREBASE_CONFIG = null → chạy như cũ (localStorage + mật khẩu Admin cục bộ / Leader chọn tên). */
+const FIREBASE_CONFIG = null; // Firebase Console → Project settings → Your apps → Web app → firebaseConfig
+const CLOUD_OWNER_EMAIL = 'dangthanhbinh53@gmail.com'; // chủ dự án: luôn là Admin (đăng nhập Google)
+const FIREBASE_SDK = 'https://www.gstatic.com/firebasejs/12.19.0/';
+const USERS_COL = 'rca_users', RCA_COL = 'rca_records', ACT_COL = 'rca_actions', META_COL = 'rca_meta';
+const AUTH_EMAIL_DOMAIN = 'ild-rca.local', SHARED_USERNAME = 'viewer', AUTH_CACHE_KEY = 'rca_tracking_app_v1_auth_cache';
+const CLOUD_ENABLED = !!(FIREBASE_CONFIG && FIREBASE_CONFIG.apiKey);
+const CLOUD_KINDS = {r: RCA_COL, a: ACT_COL, m: META_COL};
+const CLOUD = {
+  ready:false, error:'', user:null, offline:false, m:null, appM:null, auth:null, db:null, unsubs:[],
+  known:{},          // 'r:id' | 'a:id' | 'm:settings' -> JSON chuẩn hoá của bản đang có trên cloud
+  loaded:{}, server:{}, seen:{}, pendingByKind:{}, empty:false, askedInitialPush:false,
+  pushTimer:null, pendingWrites:false, lastSync:''
+};
+const AUTH = {profile:null, mode:'shared'};
+
+const authEmail = u=>{ u = (u||'').trim().toLowerCase(); return u.includes('@') ? u : u + '@' + AUTH_EMAIL_DOMAIN; };
+const authIsOwner = u=>!!u && u.emailVerified && (u.email||'').toLowerCase() === CLOUD_OWNER_EMAIL;
+function authRoleLabel(p){ return p.role==='admin' ? 'Admin' : (p.role==='leader' ? 'Leader' : 'Chỉ xem'); }
+function authCacheGet(){ try{ return JSON.parse(localStorage.getItem(AUTH_CACHE_KEY)||'null'); }catch(e){ return null; } }
+function authCacheSet(p){
+  try{
+    if(p) localStorage.setItem(AUTH_CACHE_KEY, JSON.stringify({uid:p.uid, email:p.email, username:p.username, displayName:p.displayName, leaderName:p.leaderName, role:p.role, shared:!!p.shared, owner:!!p.owner}));
+    else localStorage.removeItem(AUTH_CACHE_KEY);
+  }catch(e){ /* ignore */ }
+}
+function authErrMsg(e){
+  const code = (e && e.code) || '';
+  if(code.startsWith('auth/requests-from-referer')) return 'Tên miền này chưa được phép dùng Firebase — mở app từ GitHub Pages';
+  return ({
+    'auth/invalid-credential':'Sai tên đăng nhập hoặc mật khẩu', 'auth/wrong-password':'Sai mật khẩu',
+    'auth/user-not-found':'Không có tài khoản này', 'auth/invalid-email':'Tên đăng nhập không hợp lệ',
+    'auth/too-many-requests':'Thử sai quá nhiều lần — đợi vài phút', 'auth/network-request-failed':'Mất kết nối mạng',
+    'auth/user-disabled':'Tài khoản đã bị vô hiệu hoá', 'auth/weak-password':'Mật khẩu tối thiểu 6 ký tự',
+    'auth/email-already-in-use':'Tên đăng nhập đã tồn tại', 'auth/popup-blocked':'Trình duyệt chặn cửa sổ đăng nhập Google',
+    'auth/operation-not-allowed':'Chưa bật phương thức đăng nhập này trong Firebase Authentication',
+    'permission-denied':'Không có quyền (kiểm tra vai trò tài khoản / Firestore Rules)'
+  }[code]) || (e && e.message) || String(e);
+}
+
+/* ---- khởi động ---- */
+async function cloudInit(){
+  try{
+    const [appM, authM, fsM] = await Promise.all([
+      import(FIREBASE_SDK+'firebase-app.js'), import(FIREBASE_SDK+'firebase-auth.js'), import(FIREBASE_SDK+'firebase-firestore.js')
+    ]);
+    const app = appM.initializeApp(FIREBASE_CONFIG);
+    CLOUD.appM = appM; CLOUD.m = {...authM, ...fsM};
+    CLOUD.auth = authM.getAuth(app);
+    try{ CLOUD.db = fsM.initializeFirestore(app, {localCache: fsM.persistentLocalCache({tabManager: fsM.persistentMultipleTabManager()})}); }
+    catch(e){ console.warn('Firestore offline cache unavailable', e); CLOUD.db = fsM.getFirestore(app); }
+    await authM.setPersistence(CLOUD.auth, authM.browserLocalPersistence);
+    CLOUD.ready = true;
+    authGateRender();
+    authM.onAuthStateChanged(CLOUD.auth, async user=>{
+      cloudStopListeners();
+      let profile = null;
+      if(user){
+        profile = await authLoadProfile(user);
+        if(profile.error){
+          const msg = profile.error;
+          await authM.signOut(CLOUD.auth);
+          AUTH.profile = null; CLOUD.user = null; authApply();
+          document.getElementById('gateErr').textContent = msg; toast(msg);
+          return;
+        }
+      }
+      AUTH.profile = profile; CLOUD.user = user || null; CLOUD.offline = false;
+      if(profile) authCacheSet(profile);
+      authApply();
+      if(user) cloudStartListeners();
+    });
+    window.addEventListener('online', renderCloudStatus);
+    window.addEventListener('offline', renderCloudStatus);
+  }catch(e){
+    CLOUD.error = e.message || 'Không tải được Firebase SDK';
+    authGateRender();
+    renderCloudStatus();
+  }
+}
+async function authLoadProfile(user){
+  if(authIsOwner(user)) return {uid:user.uid, email:user.email, username:user.email, displayName:user.displayName||user.email, leaderName:'', role:'admin', owner:true};
+  try{
+    const snap = await CLOUD.m.getDoc(CLOUD.m.doc(CLOUD.db, USERS_COL, user.uid));
+    if(!snap.exists()) return {error:'Tài khoản chưa được cấp quyền vào app — liên hệ Admin'};
+    const d = snap.data();
+    if(d.active === false) return {error:'Tài khoản đã bị khoá — liên hệ Admin'};
+    const role = ['admin','leader'].includes(d.role) ? d.role : 'viewer';
+    return {uid:user.uid, email:user.email, username:d.username||user.email, displayName:d.displayName||d.username||user.email,
+            leaderName:d.leaderName||'', role, shared:!!d.shared};
+  }catch(e){
+    const c = authCacheGet();
+    if(c && c.uid === user.uid) return {...c, fromCache:true};
+    return {error: e.code==='permission-denied' ? 'Không có quyền đọc hồ sơ tài khoản (kiểm tra Firestore Rules)' : 'Không kiểm tra được quyền: ' + e.message};
+  }
+}
+/* Ánh xạ hồ sơ Firebase → currentUser của hệ phân quyền sẵn có (canEditRca/canEditAction… dùng currentUser.name khớp Leader/PIC) */
+function authApply(){
+  const p = AUTH.profile;
+  if(p && !CLOUD.offline && (p.role==='admin' || p.role==='leader')){
+    currentUser = {role:p.role, name:p.leaderName || p.displayName, username:p.username};
+  } else {
+    currentUser = null;
+  }
+  document.getElementById('authGate').classList.toggle('show', !p);
+  if(!p) authGateRender();
+  renderAuthBox();
+  applyPermissionUI();
+  renderRcaTable();
+  renderActionTable();
+  renderCloudStatus();
+  if(document.getElementById('accountModalOverlay').classList.contains('show')) authRenderAccount();
+  if(document.getElementById('view-users').classList.contains('active')) renderUsers();
+}
+
+/* ---- màn hình đăng nhập (cấp 1: mật khẩu chung · cấp 2: tài khoản riêng / Google) ---- */
+function authGateRender(){
+  const personal = AUTH.mode === 'personal';
+  document.getElementById('gateUserRow').style.display = personal ? '' : 'none';
+  document.getElementById('gateGoogle').style.display = personal ? '' : 'none';
+  document.getElementById('gateToggle').textContent = personal ? '← Quay lại đăng nhập bằng mật khẩu chung' : 'Đăng nhập tài khoản riêng (Leader / Admin)';
+  document.getElementById('gateSub').textContent = !CLOUD.ready
+    ? (CLOUD.error ? 'Không kết nối được máy chủ đăng nhập — cần mạng cho lần đăng nhập đầu tiên' : 'Đang kết nối…')
+    : (personal ? 'Đăng nhập bằng tài khoản riêng' : 'Nhập mật khẩu chung để xem dữ liệu');
+  document.getElementById('gateBtn').disabled = !CLOUD.ready;
+  document.getElementById('gateGoogle').disabled = !CLOUD.ready;
+  document.getElementById('gateOffline').style.display = (authCacheGet() && !CLOUD.ready && CLOUD.error) ? '' : 'none';
+}
+async function authSignIn(username, pw, errEl, btn){
+  if(!CLOUD.ready){ errEl.textContent = CLOUD.error ? 'Không kết nối được máy chủ đăng nhập — kiểm tra mạng' : 'Đang kết nối, thử lại sau giây lát'; return false; }
+  if(!username.trim()){ errEl.textContent = 'Nhập tên đăng nhập'; return false; }
+  if(!pw){ errEl.textContent = 'Nhập mật khẩu'; return false; }
+  errEl.textContent = '';
+  if(btn) btn.disabled = true;
+  try{ await CLOUD.m.signInWithEmailAndPassword(CLOUD.auth, authEmail(username), pw); return true; }
+  catch(e){ errEl.textContent = authErrMsg(e); return false; }
+  finally{ if(btn) btn.disabled = false; }
+}
+async function authGoogleSignIn(errEl){
+  if(!CLOUD.ready) return;
+  try{
+    const p = new CLOUD.m.GoogleAuthProvider();
+    p.setCustomParameters({login_hint: CLOUD_OWNER_EMAIL, prompt:'select_account'});
+    await CLOUD.m.signInWithPopup(CLOUD.auth, p);
+    closeModal('accountModalOverlay');
+  }catch(e){ if(e.code !== 'auth/popup-closed-by-user' && errEl) errEl.textContent = authErrMsg(e); }
+}
+async function authGateSubmit(){
+  const personal = AUTH.mode === 'personal';
+  const ok = await authSignIn(personal ? document.getElementById('gateUser').value : SHARED_USERNAME,
+    document.getElementById('gatePass').value, document.getElementById('gateErr'), document.getElementById('gateBtn'));
+  if(ok){ document.getElementById('gatePass').value = ''; AUTH.mode = 'shared'; }
+}
+function authUseOffline(){
+  const c = authCacheGet(); if(!c) return;
+  AUTH.profile = {...c, fromCache:true}; CLOUD.offline = true;
+  authApply();
+  toast('Đang xem dữ liệu offline (bản sao gần nhất trên máy) — chỉ xem');
+}
+document.getElementById('gateBtn').addEventListener('click', authGateSubmit);
+document.getElementById('gatePass').addEventListener('keydown', e=>{ if(e.key==='Enter'){ e.preventDefault(); authGateSubmit(); } });
+document.getElementById('gateUser').addEventListener('keydown', e=>{ if(e.key==='Enter'){ e.preventDefault(); document.getElementById('gatePass').focus(); } });
+document.getElementById('gateGoogle').addEventListener('click', ()=>authGoogleSignIn(document.getElementById('gateErr')));
+document.getElementById('gateOffline').addEventListener('click', authUseOffline);
+document.getElementById('gateToggle').addEventListener('click', ()=>{
+  AUTH.mode = AUTH.mode === 'personal' ? 'shared' : 'personal';
+  document.getElementById('gateErr').textContent = '';
+  authGateRender();
+  setTimeout(()=>document.getElementById(AUTH.mode==='personal' ? 'gateUser' : 'gatePass').focus(), 30);
+});
+
+/* ---- hộp thoại tài khoản (bấm tên ở góc phải) ---- */
+function authOpenAccount(){
+  if(!CLOUD_ENABLED) return;
+  authRenderAccount();
+  document.getElementById('accountModalOverlay').classList.add('show');
+  setTimeout(()=>{ const u = document.getElementById('acctUser'); if(u) u.focus(); }, 50);
+}
+function authRenderAccount(){
+  const p = AUTH.profile;
+  const personal = p && !p.shared;
+  const who = p
+    ? `<p style="margin-top:0;">Đang dùng: <b>${escapeHtml(p.displayName)}</b> · ${escapeHtml(authRoleLabel(p))}${p.shared ? ' (mật khẩu chung)' : ''}${CLOUD.offline ? ' · offline' : ''}</p>
+       ${p.role==='viewer' ? '<p class="locked-note">Tài khoản này chỉ xem. Đăng nhập tài khoản riêng (Leader/Admin) để thêm/sửa RCA và Action.</p>' : ''}
+       ${p.role!=='viewer' && !p.owner ? `<p class="locked-note">Tên Leader/PIC dùng để phân quyền: <b>${escapeHtml(p.leaderName || p.displayName)}</b></p>` : ''}`
+    : '<p>Chưa đăng nhập</p>';
+  const form = personal || CLOUD.offline ? '' : `
+    <h3 style="margin:16px 0 8px;font-size:16px;">Đăng nhập tài khoản riêng (Leader / Admin)</h3>
+    <div class="field" style="margin-bottom:8px;"><input id="acctUser" placeholder="Tên đăng nhập" autocomplete="username" autocapitalize="off"></div>
+    <div class="field"><input id="acctPass" type="password" placeholder="Mật khẩu" autocomplete="current-password"></div>
+    <div class="auth-err" id="acctErr" style="margin-top:6px;"></div>
+    <div style="display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap;">
+      <button class="btn btn-sm" id="acctGoogle" ${CLOUD.ready ? '' : 'disabled'}>Google (chủ dự án)</button>
+      <button class="btn btn-sm btn-primary" id="acctLoginBtn">Đăng nhập</button>
+    </div>`;
+  document.getElementById('accountBody').innerHTML = who + form;
+  document.getElementById('accountFoot').innerHTML =
+    (p ? `<button class="btn btn-danger" id="acctLogout">Đăng xuất</button>` : '') +
+    `<button class="btn" data-close-account>Đóng</button>`;
+  document.querySelector('[data-close-account]').addEventListener('click', ()=>closeModal('accountModalOverlay'));
+  const lo = document.getElementById('acctLogout'); if(lo) lo.addEventListener('click', authLogout);
+  if(form){
+    const doLogin = async ()=>{
+      if(await authSignIn(document.getElementById('acctUser').value, document.getElementById('acctPass').value,
+          document.getElementById('acctErr'), document.getElementById('acctLoginBtn'))){
+        closeModal('accountModalOverlay'); toast('Đã đăng nhập');
+      }
+    };
+    document.getElementById('acctLoginBtn').addEventListener('click', doLogin);
+    document.getElementById('acctPass').addEventListener('keydown', e=>{ if(e.key==='Enter'){ e.preventDefault(); doLogin(); } });
+    document.getElementById('acctGoogle').addEventListener('click', ()=>authGoogleSignIn(document.getElementById('acctErr')));
+  }
+}
+async function authLogout(){
+  const warn = (!navigator.onLine && CLOUD.pendingWrites) ? '\n\n⚠ Đang mất mạng và còn thay đổi chưa gửi lên Firebase — chúng sẽ được gửi khi đăng nhập lại cùng tài khoản trên máy này.' : '';
+  if(!confirm('Đăng xuất khỏi RCA Tracking App trên máy này?' + warn)) return;
+  closeModal('accountModalOverlay');
+  try{
+    if(CLOUD.pushTimer) cloudPushNow();
+    if(CLOUD.m && CLOUD.db && navigator.onLine){
+      await Promise.race([CLOUD.m.waitForPendingWrites(CLOUD.db), new Promise(r=>setTimeout(r, 5000))]);
+    }
+  }catch(e){ /* ignore */ }
+  cloudStopListeners();
+  authCacheSet(null);
+  AUTH.mode = 'shared';
+  if(CLOUD.offline || !CLOUD.auth){
+    AUTH.profile = null; CLOUD.offline = false; authApply();
+  } else {
+    try{ await CLOUD.m.signOut(CLOUD.auth); }catch(e){ AUTH.profile = null; authApply(); }
+  }
+  toast('Đã đăng xuất');
+}
+
+/* ---- đồng bộ dữ liệu ---- */
+function stableJson(v){
+  if(Array.isArray(v)) return '[' + v.map(x=>stableJson(x===undefined ? null : x)).join(',') + ']';
+  if(v && typeof v === 'object') return '{' + Object.keys(v).filter(k=>v[k]!==undefined).sort().map(k=>JSON.stringify(k)+':'+stableJson(v[k])).join(',') + '}';
+  return JSON.stringify(v);
+}
+function cloudClean(obj){ return JSON.parse(JSON.stringify(obj)); } // Firestore không nhận undefined
+function cloudStrip(d){ const o = {}; Object.keys(d).forEach(k=>{ if(k[0] !== '_') o[k] = d[k]; }); return o; }
+function cloudAllLoaded(){ return ['r','a','m'].every(k=>CLOUD.loaded[k]); }
+function cloudCanWrite(){ return CLOUD_ENABLED && !!CLOUD.user && !CLOUD.offline && !!currentUser && cloudAllLoaded(); }
+function cloudLocalEntries(){
+  const out = new Map();
+  state.rcaList.forEach(r=>{ if(r && r.id) out.set('r:'+r.id, r); });
+  state.actionList.forEach(a=>{ if(a && a.id) out.set('a:'+a.id, a); });
+  if(isAdmin()) out.set('m:settings', state.settings); // danh mục/cài đặt: chỉ Admin được ghi
+  return out;
+}
+function cloudSchedulePush(){
+  if(!cloudCanWrite()) return;
+  clearTimeout(CLOUD.pushTimer);
+  CLOUD.pushTimer = setTimeout(()=>cloudPushNow(), 400);
+}
+/* Ghi các document khác với bản đã biết trên cloud. Phần trước lệnh await đầu tiên chạy đồng bộ:
+   Firestore áp thay đổi vào cache cục bộ ngay, commit() chỉ chờ máy chủ xác nhận (khi offline sẽ chờ tới lúc có mạng). */
+async function cloudPushNow(force){
+  clearTimeout(CLOUD.pushTimer); CLOUD.pushTimer = null;
+  if(!cloudCanWrite()) return;
+  if(CLOUD.empty && !force) return; // Firebase chưa có dữ liệu → chờ Admin đẩy lần đầu
+  const m = CLOUD.m, local = cloudLocalEntries(), ops = [];
+  local.forEach((data, key)=>{
+    const clean = cloudClean(data), j = stableJson(clean);
+    if(CLOUD.known[key] !== j) ops.push({key, clean, j});
+  });
+  if(isAdmin()) Object.keys(CLOUD.known).forEach(key=>{ if(key[0] !== 'm' && !local.has(key)) ops.push({key, del:true}); });
+  if(!ops.length) return;
+  const by = AUTH.profile ? AUTH.profile.username : '';
+  const commits = [];
+  for(let i=0; i<ops.length; i+=400){
+    const batch = m.writeBatch(CLOUD.db);
+    ops.slice(i, i+400).forEach(op=>{
+      const ref = m.doc(CLOUD.db, CLOUD_KINDS[op.key[0]], op.key.slice(2));
+      if(op.del){ batch.delete(ref); delete CLOUD.known[op.key]; }
+      else { batch.set(ref, {...op.clean, _updatedAt:new Date().toISOString(), _updatedBy:by}); CLOUD.known[op.key] = op.j; }
+    });
+    commits.push(batch.commit());
+  }
+  CLOUD.empty = false;
+  try{
+    await Promise.all(commits);
+    CLOUD.lastSync = new Date().toLocaleTimeString('vi-VN');
+    renderCloudStatus();
+  }catch(e){
+    console.error('Firestore write failed', e);
+    toast('Không lưu được lên Firebase: ' + authErrMsg(e));
+    cloudStartListeners(); // nạp lại bản trên cloud để máy này không lệch
+  }
+}
+function cloudStopListeners(){
+  CLOUD.unsubs.forEach(f=>{ try{ f(); }catch(e){} });
+  CLOUD.unsubs = []; CLOUD.loaded = {}; CLOUD.server = {}; CLOUD.seen = {}; CLOUD.pendingByKind = {};
+  CLOUD.known = {}; CLOUD.empty = false; CLOUD.pendingWrites = false;
+}
+function cloudStartListeners(){
+  cloudStopListeners();
+  if(!CLOUD.user || !CLOUD.db) return;
+  const m = CLOUD.m;
+  Object.entries(CLOUD_KINDS).forEach(([kind, col])=>{
+    CLOUD.unsubs.push(m.onSnapshot(m.collection(CLOUD.db, col), {includeMetadataChanges:true},
+      snap=>cloudOnSnapshot(kind, snap),
+      err=>{ CLOUD.error = authErrMsg(err); renderCloudStatus(); toast('Lỗi đồng bộ Firebase: ' + CLOUD.error); }));
+  });
+}
+function cloudOnSnapshot(kind, snap){
+  const fromCache = snap.metadata.fromCache;
+  CLOUD.pendingByKind[kind] = snap.metadata.hasPendingWrites;
+  CLOUD.pendingWrites = Object.values(CLOUD.pendingByKind).some(Boolean);
+  if(!fromCache){ CLOUD.server[kind] = true; CLOUD.lastSync = new Date().toLocaleTimeString('vi-VN'); CLOUD.error = ''; }
+  // Chỉ đổi metadata (đã gửi xong / chuyển cache→server), nội dung không đổi → không render lại
+  if(CLOUD.seen[kind] && !snap.docChanges().length){ renderCloudStatus(); return; }
+  // Collection rỗng mà chưa từng thấy dữ liệu → KHÔNG xoá state trên máy (có thể Firebase chưa được đẩy dữ liệu lần đầu,
+  // hoặc cache offline còn trống). Chỉ đánh dấu đã tải để quyết định ở cloudCheckEmpty().
+  if(snap.empty && !CLOUD.seen[kind]){
+    if(!fromCache) CLOUD.loaded[kind] = true;
+    cloudCheckEmpty();
+    renderCloudStatus();
+    return;
+  }
+  if(CLOUD.pushTimer) cloudPushNow(); // gửi nốt thay đổi đang chờ của máy này trước khi nhận bản mới
+  CLOUD.seen[kind] = true;
+  CLOUD.loaded[kind] = true;
+  CLOUD.empty = false;
+  Object.keys(CLOUD.known).forEach(k=>{ if(k[0] === kind) delete CLOUD.known[k]; });
+  const docs = snap.docs.map(d=>({...cloudStrip(d.data()), id: d.id}));
+  if(kind === 'r'){
+    state.rcaList = docs.sort((a,b)=>(a.stt||0)-(b.stt||0));
+    state.rcaList.forEach(r=>{ CLOUD.known['r:'+r.id] = stableJson(r); });
+  } else if(kind === 'a'){
+    state.actionList = docs;
+    state.actionList.forEach(a=>{ CLOUD.known['a:'+a.id] = stableJson(a); });
+  } else {
+    const s = docs.find(d=>d.id === 'settings');
+    if(s){
+      const {id, ...rest} = s;
+      state.settings = Object.assign(defaultSettings(), rest);
+      CLOUD.known['m:settings'] = stableJson(cloudClean(state.settings));
+    }
+  }
+  persist(true);
+  cloudRenderAll();
+}
+function cloudCheckEmpty(){
+  if(!['r','a','m'].every(k=>CLOUD.server[k])) return;
+  if(CLOUD.seen.r || CLOUD.seen.a || CLOUD.seen.m) return;
+  CLOUD.empty = true;
+  renderCloudStatus();
+  if(isAdmin() && !CLOUD.askedInitialPush){
+    CLOUD.askedInitialPush = true;
+    setTimeout(()=>{
+      if(CLOUD.empty && confirm(`Firebase chưa có dữ liệu RCA.\n\nĐẩy ${state.rcaList.length} RCA và ${state.actionList.length} action đang có trên máy này lên Firebase làm dữ liệu chung cho mọi người?\n\nNếu dữ liệu mới nhất nằm ở file JSON sao lưu: bấm Huỷ → "Phục hồi" file đó → tab "Dữ liệu & Cấu hình" → "Đẩy dữ liệu lên Firebase (lần đầu)".`)) cloudInitialPush();
+    }, 300);
+  }
+}
+function cloudInitialPush(){
+  if(!isAdmin()){ toast('Chỉ Admin được đẩy dữ liệu lần đầu'); return; }
+  cloudPushNow(true);
+  toast('Đang đẩy dữ liệu lên Firebase…');
+}
+function cloudRenderAll(){
+  applySettingsToRuntime();
+  populateStaticDropdowns();
+  populateDynamicLists();
+  renderRcaTable();
+  renderActionTable();
+  renderDashboard();
+  renderDataStats();
+  renderBranding();
+  if(isAdmin()) renderSettingsTab();
+  renderCloudStatus();
+}
+function renderCloudStatus(){
+  const panel = document.getElementById('cloudPanel');
+  if(!panel) return;
+  panel.style.display = CLOUD_ENABLED ? '' : 'none';
+  if(!CLOUD_ENABLED) return;
+  const p = AUTH.profile;
+  let status;
+  if(CLOUD.offline) status = '<span class="badge badge-warn">Offline — chỉ xem bản sao trên máy</span>';
+  else if(!CLOUD.ready) status = CLOUD.error ? `<span class="badge badge-bad">Lỗi: ${escapeHtml(CLOUD.error)}</span>` : '<span class="badge badge-muted">Đang kết nối…</span>';
+  else if(!CLOUD.user) status = '<span class="badge badge-muted">Chưa đăng nhập</span>';
+  else if(!navigator.onLine) status = '<span class="badge badge-warn">Mất mạng — thay đổi sẽ tự gửi khi có mạng</span>';
+  else if(CLOUD.error) status = `<span class="badge badge-bad">${escapeHtml(CLOUD.error)}</span>`;
+  else if(CLOUD.pendingWrites) status = '<span class="badge badge-info">Đang gửi thay đổi…</span>';
+  else status = '<span class="badge badge-ok">Đã đồng bộ</span>';
+  const emptyNote = CLOUD.empty
+    ? (isAdmin()
+        ? `<div class="guide-callout warn"><span>Firebase chưa có dữ liệu. Bấm nút dưới để đẩy ${state.rcaList.length} RCA và ${state.actionList.length} action đang có trên máy này lên làm dữ liệu chung.</span></div>
+           <button class="btn btn-primary" id="btnCloudInitialPush">⬆ Đẩy dữ liệu lên Firebase (lần đầu)</button>`
+        : '<div class="guide-callout warn"><span>Firebase chưa có dữ liệu — chờ Admin đẩy dữ liệu lần đầu. Đang hiển thị bản trên máy này.</span></div>')
+    : '';
+  document.getElementById('cloudStatus').innerHTML = `
+    <div class="cloud-status-grid">
+      <span>Trạng thái</span><span>${status}</span>
+      <span>Tài khoản</span><span>${p ? escapeHtml(p.displayName) + ' · ' + escapeHtml(authRoleLabel(p)) : '—'}</span>
+      <span>Dự án</span><span>${escapeHtml(FIREBASE_CONFIG.projectId || '')}</span>
+      <span>Nhận dữ liệu lần cuối</span><span>${escapeHtml(CLOUD.lastSync || '—')}</span>
+    </div>
+    <p class="locked-note" style="margin:0 0 10px;">Mọi thay đổi (thêm/sửa RCA, Action, trạng thái…) được lưu thẳng lên Firebase và hiện ngay trên máy của người khác. Khi mất mạng, app vẫn dùng được và tự gửi lại khi có mạng. File JSON sao lưu và thư mục Evidence vẫn nằm trên máy này.</p>
+    ${emptyNote}`;
+  const b = document.getElementById('btnCloudInitialPush');
+  if(b) b.addEventListener('click', ()=>{
+    if(confirm(`Đẩy ${state.rcaList.length} RCA và ${state.actionList.length} action lên Firebase?`)) cloudInitialPush();
+  });
+}
+
+/* ---- Quản lý người dùng (Admin) ---- */
+let USERS_LIST = [];
+/* Phiên phụ (in-memory) để tạo / đổi mật khẩu tài khoản khác mà không đăng xuất Admin đang dùng */
+async function authSecondary(fn){
+  const app = CLOUD.appM.initializeApp(FIREBASE_CONFIG, 'sec-' + Date.now());
+  const a = CLOUD.m.initializeAuth(app, {persistence: CLOUD.m.inMemoryPersistence});
+  try{ return await fn(a); }
+  finally{ try{ await CLOUD.m.signOut(a); }catch(e){} try{ await CLOUD.appM.deleteApp(app); }catch(e){} }
+}
+const pwCheck = (a,b)=>!a || a.length<6 ? 'Mật khẩu tối thiểu 6 ký tự' : (a!==b ? 'Mật khẩu nhập lại không khớp' : '');
+const ROLE_OPTIONS = [['viewer','Chỉ xem'],['leader','Leader'],['admin','Admin']];
+function userVal(id){ const el = document.getElementById(id); return el ? el.value : ''; }
+async function renderUsers(){
+  const box = document.getElementById('usersBody');
+  if(!CLOUD_ENABLED){ box.innerHTML = ''; return; }
+  if(!isAdmin()){ box.innerHTML = '<div class="panel"><div class="empty-note">Chỉ Admin.</div></div>'; return; }
+  if(!CLOUD.user || CLOUD.offline){ box.innerHTML = '<div class="panel"><div class="empty-note">Cần kết nối Firebase để quản lý người dùng.</div></div>'; return; }
+  box.innerHTML = '<div class="panel"><div class="empty-note">Đang tải danh sách người dùng…</div></div>';
+  try{
+    const snap = await CLOUD.m.getDocs(CLOUD.m.collection(CLOUD.db, USERS_COL));
+    const order = {admin:0, leader:1, viewer:2};
+    USERS_LIST = snap.docs.map(d=>({uid:d.id, ...d.data()}))
+      .sort((a,b)=>(b.shared?1:0)-(a.shared?1:0) || (order[a.role]??3)-(order[b.role]??3) || (a.username||'').localeCompare(b.username||''));
+  }catch(e){
+    box.innerHTML = `<div class="panel"><b>Không đọc được danh sách người dùng:</b> ${escapeHtml(authErrMsg(e))}
+      <p class="locked-note">Kiểm tra đã Publish Firestore Rules (file <code>firestore.rules</code>) trong Firebase Console.</p></div>`;
+    return;
+  }
+  const shared = USERS_LIST.find(u=>u.shared);
+  const me = AUTH.profile.uid;
+  const rows = USERS_LIST.map(u=>{
+    const self = u.uid === me;
+    const roleCell = u.shared
+      ? '<span class="badge badge-muted">Chỉ xem</span>'
+      : `<select data-user-role="${escapeHtml(u.uid)}" ${self ? 'disabled title="Không tự đổi vai trò của mình"' : ''}>${ROLE_OPTIONS.map(([v,l])=>`<option value="${v}"${u.role===v?' selected':''}>${l}</option>`).join('')}</select>`;
+    return `<tr>
+      <td><b>${escapeHtml(u.username)}</b>${u.shared ? ' <span class="badge badge-muted">mật khẩu chung</span>' : ''}${self ? ' <span class="locked-note">(bạn)</span>' : ''}</td>
+      <td>${escapeHtml(u.displayName||'')}</td>
+      <td>${u.shared ? '—' : escapeHtml(u.leaderName||'') || '<span class="locked-note">(chưa đặt)</span>'}</td>
+      <td>${roleCell}</td>
+      <td>${u.active===false ? '<span class="badge badge-bad">Đã khoá</span>' : '<span class="badge badge-ok">Hoạt động</span>'}</td>
+      <td class="nowrap">${escapeHtml(u.createdAt ? fmtDate(u.createdAt.slice(0,10)) : '')}</td>
+      <td>${self ? '' : `<div class="user-actions">
+        ${u.shared ? '' : `<button class="btn btn-sm" data-user-leader="${escapeHtml(u.uid)}">✎ Tên Leader</button>`}
+        <button class="btn btn-sm" data-user-active="${escapeHtml(u.uid)}">${u.active===false ? 'Mở khoá' : 'Khoá'}</button>
+        <button class="btn btn-sm" data-user-pw="${escapeHtml(u.uid)}">Đổi mật khẩu</button>
+        <button class="btn btn-sm btn-danger" data-user-remove="${escapeHtml(u.uid)}">Xoá</button>
+      </div>`}</td>
+    </tr>`;
+  }).join('');
+  box.innerHTML = `
+    <div class="panel">
+      <h2>🔑 Mật khẩu chung (chỉ xem)</h2>
+      <p class="locked-note">Người không có tài khoản riêng nhập mật khẩu này để <b>xem</b> dữ liệu (không thêm/sửa được). Tối thiểu 6 ký tự.</p>
+      ${shared ? `<div class="users-form">
+          <div class="field"><label>Mật khẩu hiện tại</label><input type="password" id="stOld" autocomplete="off"></div>
+          <div class="field"><label>Mật khẩu mới</label><input type="password" id="stNew" autocomplete="new-password"></div>
+          <div class="field"><label>Nhập lại</label><input type="password" id="stNew2" autocomplete="new-password"></div>
+          <div><button class="btn btn-primary" id="btnSharedChange">Đổi mật khẩu chung</button></div>
+        </div>`
+      : `<div class="users-form">
+          <div class="field"><label>Mật khẩu chung</label><input type="password" id="stNew" autocomplete="new-password"></div>
+          <div class="field"><label>Nhập lại</label><input type="password" id="stNew2" autocomplete="new-password"></div>
+          <div><button class="btn btn-primary" id="btnSharedCreate">Tạo mật khẩu chung</button></div>
+        </div>`}
+    </div>
+    <div class="panel">
+      <h2>➕ Tạo tài khoản riêng</h2>
+      <div class="users-form">
+        <div class="field"><label>Tên đăng nhập</label><input id="nuUser" placeholder="vd: hung.le" autocapitalize="off"></div>
+        <div class="field"><label>Họ tên hiển thị</label><input id="nuName" placeholder="Hung Le"></div>
+        <div class="field"><label>Tên Leader/PIC (khớp dữ liệu RCA)</label><input id="nuLeader" list="leaderList" placeholder="Hung Le"></div>
+        <div class="field"><label>Vai trò</label><select id="nuRole">${ROLE_OPTIONS.map(([v,l])=>`<option value="${v}"${v==='leader'?' selected':''}>${l}</option>`).join('')}</select></div>
+        <div class="field"><label>Mật khẩu</label><input type="password" id="nuPass" autocomplete="new-password"></div>
+        <div class="field"><label>Nhập lại</label><input type="password" id="nuPass2" autocomplete="new-password"></div>
+        <div><button class="btn btn-primary" id="nuBtn">+ Tạo</button></div>
+      </div>
+      <p class="locked-note" style="margin-bottom:0;">Tên đăng nhập 3–30 ký tự: a-z, 0-9, dấu chấm, gạch dưới, gạch ngang. <b>Tên Leader/PIC</b> phải trùng đúng tên trong cột Leader/PIC của RCA — Leader chỉ sửa được RCA/Action có tên mình. Chủ dự án (${escapeHtml(CLOUD_OWNER_EMAIL)}, đăng nhập Google) luôn là Admin.</p>
+    </div>
+    <div class="panel">
+      <h2>👥 Danh sách tài khoản (${USERS_LIST.length})</h2>
+      <div id="userPwBox"></div>
+      <div class="table-wrap"><table>
+        <thead><tr><th>Tên đăng nhập</th><th>Họ tên</th><th>Tên Leader/PIC</th><th>Vai trò</th><th>Trạng thái</th><th>Ngày tạo</th><th></th></tr></thead>
+        <tbody>${rows || '<tr><td colspan="7" class="empty-note">Chưa có tài khoản nào.</td></tr>'}</tbody>
+      </table></div>
+      <p class="locked-note" style="margin-bottom:0;">"Xoá" gỡ quyền vào app ngay lập tức. Tài khoản đăng nhập vẫn còn trong Firebase Authentication — xoá hẳn ở Firebase Console nếu cần.</p>
+    </div>`;
+  const on = (id, fn)=>{ const el = document.getElementById(id); if(el) el.addEventListener('click', fn); };
+  on('btnSharedCreate', sharedCreate);
+  on('btnSharedChange', sharedChangePassword);
+  on('nuBtn', userCreate);
+}
+document.getElementById('usersBody').addEventListener('click', e=>{
+  const t = e.target.closest('button'); if(!t) return;
+  if(t.dataset.userActive){ const u = USERS_LIST.find(x=>x.uid===t.dataset.userActive); if(u) userUpdate(u.uid, {active: u.active===false}, u.active===false ? 'Đã mở khoá' : 'Đã khoá'); }
+  else if(t.dataset.userPw) userPasswordForm(t.dataset.userPw);
+  else if(t.dataset.userRemove) userRemove(t.dataset.userRemove);
+  else if(t.dataset.userLeader){
+    const u = USERS_LIST.find(x=>x.uid===t.dataset.userLeader); if(!u) return;
+    const v = prompt(`Tên Leader/PIC của "${u.username}" (phải trùng tên trong cột Leader/PIC của RCA):`, u.leaderName || u.displayName || '');
+    if(v !== null) userUpdate(u.uid, {leaderName: v.trim()}, 'Đã cập nhật tên Leader');
+  }
+});
+document.getElementById('usersBody').addEventListener('change', e=>{
+  const sel = e.target.closest('[data-user-role]'); if(!sel) return;
+  userUpdate(sel.dataset.userRole, {role: sel.value}, 'Đã đổi vai trò → ' + ROLE_OPTIONS.find(r=>r[0]===sel.value)[1]);
+});
+async function userCreateAccount(username, displayName, leaderName, role, pw, shared){
+  const email = authEmail(username);
+  let newUid;
+  try{
+    newUid = await authSecondary(async a=>(await CLOUD.m.createUserWithEmailAndPassword(a, email, pw)).user.uid);
+  }catch(e){
+    if(e.code !== 'auth/email-already-in-use') throw e;
+    // đã có trong Firebase Auth (từng bị xoá quyền) → cấp lại nếu đúng mật khẩu
+    newUid = await authSecondary(async a=>(await CLOUD.m.signInWithEmailAndPassword(a, email, pw)).user.uid)
+      .catch(()=>{ throw Object.assign(new Error('Tên đăng nhập đã tồn tại (mật khẩu không khớp để cấp lại quyền)'), {code:'x'}); });
+  }
+  await CLOUD.m.setDoc(CLOUD.m.doc(CLOUD.db, USERS_COL, newUid), {
+    username: username.trim().toLowerCase(), email, displayName, leaderName, role, active:true, shared:!!shared,
+    createdAt: new Date().toISOString(), createdBy: AUTH.profile.username
+  });
+  return newUid;
+}
+async function userChangePassword(email, oldPw, newPw){
+  await authSecondary(async a=>{ const c = await CLOUD.m.signInWithEmailAndPassword(a, email, oldPw); await CLOUD.m.updatePassword(c.user, newPw); });
+}
+async function sharedCreate(){
+  const a = userVal('stNew'), err = pwCheck(a, userVal('stNew2'));
+  if(err){ toast(err); return; }
+  try{ await userCreateAccount(SHARED_USERNAME, 'Người xem (mật khẩu chung)', '', 'viewer', a, true); toast('Đã tạo mật khẩu chung'); renderUsers(); }
+  catch(e){ toast('Lỗi: ' + authErrMsg(e)); }
+}
+async function sharedChangePassword(){
+  const shared = USERS_LIST.find(u=>u.shared); if(!shared) return;
+  const old = userVal('stOld'), a = userVal('stNew');
+  const err = !old ? 'Nhập mật khẩu hiện tại' : pwCheck(a, userVal('stNew2'));
+  if(err){ toast(err); return; }
+  try{ await userChangePassword(shared.email, old, a); toast('Đã đổi mật khẩu chung'); renderUsers(); }
+  catch(e){ toast('Lỗi: ' + authErrMsg(e)); }
+}
+async function userCreate(){
+  const u = userVal('nuUser').trim().toLowerCase(), name = userVal('nuName').trim() || u;
+  const leaderName = userVal('nuLeader').trim(), role = userVal('nuRole'), a = userVal('nuPass');
+  if(!/^[a-z0-9._-]{3,30}$/.test(u)){ toast('Tên đăng nhập 3–30 ký tự: a-z, 0-9, . _ -'); return; }
+  if(u === SHARED_USERNAME || USERS_LIST.some(x=>x.username===u)){ toast('Tên đăng nhập đã tồn tại'); return; }
+  if(role === 'leader' && !leaderName){ toast('Leader cần có Tên Leader/PIC để phân quyền'); return; }
+  const err = pwCheck(a, userVal('nuPass2'));
+  if(err){ toast(err); return; }
+  const btn = document.getElementById('nuBtn'); btn.disabled = true;
+  try{ await userCreateAccount(u, name, leaderName || name, role, a, false); toast('Đã tạo tài khoản ' + u); renderUsers(); }
+  catch(e){ toast('Lỗi: ' + authErrMsg(e)); btn.disabled = false; }
+}
+async function userUpdate(targetUid, patch, msg){
+  const u = USERS_LIST.find(x=>x.uid===targetUid); if(!u) return;
+  try{
+    await CLOUD.m.updateDoc(CLOUD.m.doc(CLOUD.db, USERS_COL, targetUid), {...patch, updatedAt:new Date().toISOString(), updatedBy:AUTH.profile.username});
+    toast(msg + ': ' + u.username);
+  }catch(e){ toast('Lỗi: ' + authErrMsg(e)); }
+  renderUsers();
+}
+function userRemove(targetUid){
+  const u = USERS_LIST.find(x=>x.uid===targetUid); if(!u) return;
+  if(!confirm(`Xoá quyền vào app của "${u.username}"?` + (u.shared ? '\nNgười dùng mật khẩu chung sẽ không vào được nữa cho tới khi tạo lại.' : ''))) return;
+  CLOUD.m.deleteDoc(CLOUD.m.doc(CLOUD.db, USERS_COL, targetUid))
+    .then(()=>{ toast('Đã xoá quyền ' + u.username); renderUsers(); })
+    .catch(e=>toast('Lỗi: ' + authErrMsg(e)));
+}
+function userPasswordForm(targetUid){
+  const u = USERS_LIST.find(x=>x.uid===targetUid); if(!u) return;
+  document.getElementById('userPwBox').innerHTML = `
+    <div class="evidence-status-box" style="flex-direction:column;align-items:stretch;margin-bottom:12px;">
+      <b>Đổi mật khẩu: ${escapeHtml(u.username)}</b>
+      <div class="users-form">
+        <div class="field"><label>Mật khẩu hiện tại</label><input type="password" id="upOld" autocomplete="off"></div>
+        <div class="field"><label>Mật khẩu mới</label><input type="password" id="upNew" autocomplete="new-password"></div>
+        <div class="field"><label>Nhập lại</label><input type="password" id="upNew2" autocomplete="new-password"></div>
+        <div style="display:flex;gap:6px;"><button class="btn btn-primary" id="upSave">Lưu</button><button class="btn" id="upCancel">Huỷ</button></div>
+      </div>
+      <span class="locked-note">Firebase (gói miễn phí) chỉ cho đổi khi biết mật khẩu hiện tại. Quên mật khẩu: Xoá rồi tạo lại tài khoản với tên đăng nhập khác, hoặc đặt lại trong Firebase Console → Authentication.</span>
+    </div>`;
+  document.getElementById('upCancel').addEventListener('click', ()=>{ document.getElementById('userPwBox').innerHTML = ''; });
+  document.getElementById('upSave').addEventListener('click', async ()=>{
+    const old = userVal('upOld'), a = userVal('upNew');
+    const err = !old ? 'Nhập mật khẩu hiện tại' : pwCheck(a, userVal('upNew2'));
+    if(err){ toast(err); return; }
+    try{ await userChangePassword(u.email, old, a); toast('Đã đổi mật khẩu ' + u.username); renderUsers(); }
+    catch(e){ toast('Lỗi: ' + authErrMsg(e)); }
+  });
+}
 
 /* ================= UTIL ================= */
 function uid(prefix){ return prefix + '_' + Date.now().toString(36) + Math.random().toString(36).slice(2,7); }
@@ -1940,6 +2633,7 @@ document.querySelectorAll('.tab-btn').forEach(btn=>{
     btn.classList.add('active');
     document.getElementById('view-'+btn.dataset.tab).classList.add('active');
     if(btn.dataset.tab==='dashboard') renderDashboard();
+    if(btn.dataset.tab==='users') renderUsers();
   });
 });
 
@@ -3439,7 +4133,13 @@ function renderDataStats(){
 function init(){
   loadUiPrefs();
   loadState();
-  loadSession();
+  if(CLOUD_ENABLED){
+    // Khoá màn hình ngay từ đầu — chỉ mở khi Firebase xác nhận đăng nhập
+    document.getElementById('authGate').classList.add('show');
+    document.getElementById('appFooter').textContent = 'RCA Tracking App · dữ liệu đồng bộ qua Firebase · bản sao offline lưu trên trình duyệt';
+  } else {
+    loadSession();
+  }
   populateStaticDropdowns();
   populateDynamicLists();
   wireFilters();
@@ -3453,6 +4153,7 @@ function init(){
   initSyncFolder();
   renderSyncFileLocationHint();
   renderBranding();
+  if(CLOUD_ENABLED){ renderCloudStatus(); cloudInit(); }
 }
 init();
 </script>

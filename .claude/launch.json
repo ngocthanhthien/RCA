@@ -1,0 +1,17 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "rca-static",
+      "runtimeExecutable": "python",
+      "runtimeArgs": ["-m", "http.server", "8765"],
+      "port": 8765
+    },
+    {
+      "name": "rca-fbtest",
+      "runtimeExecutable": "python",
+      "runtimeArgs": ["-m", "http.server", "8766", "--directory", "C:/Users/BinhDang/AppData/Local/Temp/claude/C--Users-BinhDang-Documents-GitHub-RCA/4990d7c6-0dc1-4e9d-b9e1-d483a2a6b941/scratchpad/fbtest"],
+      "port": 8766
+    }
+  ]
+}
