@@ -100,6 +100,7 @@ dueDate, completeDate, evidence, verifyEffective, remarks
 - Liên kết với RCA qua **`rcaNumber`** (chuỗi, không phải id) — đây là khoá nối chính giữa 2 tab Danh sách RCA và Kế hoạch hành động.
 - Một action được xem là "thuộc checklist của RCA" nếu `id` của nó xuất hiện trong `rcaList[x].actionItems[].id` nào đó (hàm `isActionLinkedToRca()`). Nếu có, 3 trường **content/PIC/dueDate bị khoá** trong form sửa action — phải sửa từ form RCA (tab Danh sách RCA), tránh 2 nơi ghi đè nhau. Trường **status/completeDate/evidence/verifyEffective/remarks** luôn sửa được ở tab Kế hoạch hành động.
 - Action **không** thuộc checklist nào (thêm tay qua nút "+ Thêm Action") sửa tự do hoàn toàn.
+- **Status action cập nhật 2 chiều**: ngoài tab Kế hoạch hành động, còn đổi được ngay tại (1) popup xem chi tiết RCA — dropdown ở mục "Corrective actions", lưu ngay (người có `canEditAction()`), và (2) cột Status trong checklist của form sửa RCA — lưu khi bấm Lưu RCA. Status **không** lưu trong `actionItems[]`; nguồn sự thật duy nhất vẫn là `state.actionList[].status` (`withLiveStatus()` đọc vào form, `applyActionStatus()` ghi ra). Chuyển sang `Done` mà chưa có Complete Date thì tự điền ngày hôm nay.
 
 ### `state.settings` (Admin-editable, tab Cài đặt)
 

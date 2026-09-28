@@ -304,7 +304,7 @@ td.nowrap{white-space:nowrap;}
 /* action items checklist (inside RCA form) */
 .action-items-list{display:flex;flex-direction:column;gap:8px;margin-bottom:8px;}
 .action-item-row{
-  display:grid;grid-template-columns:1fr 130px 140px 34px;gap:6px;align-items:start;
+  display:grid;grid-template-columns:1fr 130px 140px 130px 34px;gap:6px;align-items:start;
   background:var(--panel-2);border:1px solid var(--border);border-radius:8px;padding:8px;
 }
 .action-item-row textarea.ai-content{min-height:40px;resize:vertical;}
@@ -395,6 +395,7 @@ footer.foot{text-align:center;padding:16px;color:var(--muted);font-size:13.5px;f
 /* evidence */
 .evidence-row{display:flex;align-items:center;gap:8px;padding:9px 0;border-bottom:1px solid var(--border);font-size:14.5px;font-weight:600;}
 .evidence-row:last-child{border-bottom:none;}
+.act-status-select{width:auto;min-width:120px;padding:4px 8px;font-size:13px;font-weight:600;flex-shrink:0;}
 .evidence-name{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
 .evidence-icon{font-size:18px;width:22px;text-align:center;flex-shrink:0;}
 .upload-label{display:inline-flex;align-items:center;gap:6px;cursor:pointer;}
@@ -886,7 +887,7 @@ footer.foot{text-align:center;padding:16px;color:var(--muted);font-size:13.5px;f
             <label>Hành động khắc phục (Corrective Actions)</label>
             <div id="f_actionItemsList" class="action-items-list"></div>
             <button type="button" class="btn btn-sm" id="btnAddActionRow" style="align-self:flex-start;margin-top:2px;">+ Thêm hành động</button>
-            <small>Mỗi dòng tự động đồng bộ thành 1 mục theo dõi ở tab "Kế hoạch hành động" (khớp theo mã RCA <b id="f_actionRcaNumberHint"></b>). Trạng thái/ngày hoàn thành/evidence của từng hành động chỉnh sửa ở tab đó.</small>
+            <small>Mỗi dòng tự động đồng bộ thành 1 mục theo dõi ở tab "Kế hoạch hành động" (khớp theo mã RCA <b id="f_actionRcaNumberHint"></b>). Trạng thái cập nhật được ở cả đây lẫn tab đó (2 chiều); ngày hoàn thành/evidence chỉnh sửa ở tab "Kế hoạch hành động".</small>
           </div>
           <div class="field full">
             <label>Standards Created</label>
@@ -1369,6 +1370,15 @@ function effectiveActionStatus(rec){
   if(rec.status === 'Done' || rec.status === 'Cancel') return rec.status;
   if(rec.dueDate && new Date() > new Date(rec.dueDate+'T00:00:00')) return 'Late';
   return rec.status || 'On Progress';
+}
+const ACTION_STATUSES = ['On Progress','Done','Late','Cancel'];
+function actionStatusOptions(selected){
+  return ACTION_STATUSES.map(s=>`<option${s===selected?' selected':''}>${s}</option>`).join('');
+}
+/* Điểm cập nhật status action dùng chung (popup RCA + form RCA) — tự điền Complete Date khi chuyển sang Done */
+function applyActionStatus(action, status){
+  action.status = status;
+  if(status==='Done' && !action.completeDate) action.completeDate = todayISO();
 }
 function badgeClassFor(status){
   if(status==='Done') return 'badge-ok';
@@ -2757,10 +2767,14 @@ function openViewRcaModal(id){
       <div class="view-label">Corrective actions (${relatedActions.length})</div>
       ${relatedActions.length ? relatedActions.map(a=>{
         const aeff = effectiveActionStatus(a);
+        const statusCell = canEditAction(a)
+          ? `${aeff==='Late' && a.status!=='Late' ? `<span class="badge ${badgeClassFor(aeff)}" title="Quá hạn theo Due date">Late</span>` : ''}
+             <select class="act-status-select" data-act-status="${escapeHtml(a.id)}" title="Cập nhật trạng thái (đồng bộ với tab Kế hoạch hành động)">${actionStatusOptions(a.status||'On Progress')}</select>`
+          : `<span class="badge ${badgeClassFor(aeff)}">${aeff}</span>`;
         return `<div class="evidence-row">
           <span class="evidence-name">${escapeHtml(a.correctiveAction)}</span>
           <span class="locked-note">${escapeHtml(a.pic)}</span>
-          <span class="badge ${badgeClassFor(aeff)}">${aeff}</span>
+          ${statusCell}
         </div>`;
       }).join('') : '<div class="empty-note">Chưa có corrective action nào.</div>'}
     </div>
@@ -2778,6 +2792,17 @@ function openViewRcaModal(id){
   }
   document.getElementById('viewRcaModalOverlay').classList.add('show');
 }
+document.getElementById('viewRcaBody').addEventListener('change', e=>{
+  const sel = e.target.closest('[data-act-status]');
+  if(!sel) return;
+  const act = state.actionList.find(a=>a.id===sel.dataset.actStatus);
+  if(!act || !canEditAction(act)){ toast('Bạn không có quyền sửa action này'); return; }
+  applyActionStatus(act, sel.value);
+  persist();
+  renderActionTable(); renderRcaTable(); renderDashboard();
+  if(viewingRcaId) openViewRcaModal(viewingRcaId);
+  toast('Đã cập nhật trạng thái action → ' + sel.value);
+});
 
 /* ================= RCA TEMPLATE REPORT (PDF print view + Excel) ================= */
 /* Logo trích xuất từ chính file "RCA Template (new-25.12.2025).xlsx" (ảnh nhúng ở góc trên trái). */
@@ -3026,7 +3051,12 @@ function openRcaModal(id){
   document.getElementById('f_actionRcaNumberHint').textContent = rec ? rec.rcaNumber : '(số RCA mới)';
   rcaModal.classList.add('show');
 }
-function makeEmptyActionRow(){ return {id: uid('actrow'), content:'', pic:'', dueDate:''}; }
+function makeEmptyActionRow(){ return {id: uid('actrow'), content:'', pic:'', dueDate:'', status:'On Progress'}; }
+/* Status KHÔNG lưu trong actionItems — nguồn sự thật duy nhất là state.actionList; chỉ đọc vào form để sửa */
+function withLiveStatus(row){
+  const act = state.actionList.find(a=>a.id===row.id);
+  return {...row, status: act ? (act.status||'On Progress') : (row.status||'On Progress')};
+}
 /* Builds the RCA form's action checklist rows for an EXISTING RCA, in priority order:
    1) already using the new system -> use its own actionItems as-is (row.id === real action id)
    2) never used the new system, but has real tracked actions already (from Excel import or
@@ -3036,17 +3066,18 @@ function makeEmptyActionRow(){ return {id: uid('actrow'), content:'', pic:'', du
    3) no tracked actions exist at all yet, but the legacy free-text Action field has content ->
       one-time bootstrap by splitting it into fresh rows (brand new ids, nothing to duplicate) */
 function buildInitialActionItems(rec){
-  if(rec.actionItems && rec.actionItems.length) return rec.actionItems.map(r=>({...r}));
+  if(rec.actionItems && rec.actionItems.length) return rec.actionItems.map(withLiveStatus);
   const existingActions = state.actionList.filter(a=>a.rcaNumber===rec.rcaNumber);
   if(existingActions.length){
-    return existingActions.map(a=>({id:a.id, content:a.correctiveAction||'', pic:a.pic||'', dueDate:a.dueDate||''}));
+    return existingActions.map(a=>({id:a.id, content:a.correctiveAction||'', pic:a.pic||'', dueDate:a.dueDate||'', status:a.status||'On Progress'}));
   }
   if(!rec.action || !rec.action.trim()) return [];
   return rec.action.split('\n').map(s=>s.trim()).filter(Boolean).map(line=>({
     id: uid('actrow'),
     content: line.replace(/^\d+[.:)]\s*/, ''),
     pic: rec.leader || '',
-    dueDate: ''
+    dueDate: '',
+    status: 'On Progress'
   }));
 }
 function renderActionItemsEditor(){
@@ -3060,6 +3091,7 @@ function renderActionItemsEditor(){
       <textarea class="ai-content" placeholder="Nội dung hành động...">${escapeHtml(row.content)}</textarea>
       <input class="ai-pic" type="text" placeholder="PIC" list="leaderList" value="${escapeHtml(row.pic)}">
       <input class="ai-due" type="date" value="${escapeHtml(row.dueDate)}">
+      <select class="ai-status" title="Trạng thái (đồng bộ với tab Kế hoạch hành động)">${actionStatusOptions(row.status||'On Progress')}</select>
       <button type="button" class="btn btn-sm btn-danger ai-remove" title="Xóa dòng này">✕</button>
     </div>`).join('');
 }
@@ -3071,6 +3103,7 @@ document.getElementById('f_actionItemsList').addEventListener('input', e=>{
   if(e.target.classList.contains('ai-content')) row.content = e.target.value;
   else if(e.target.classList.contains('ai-pic')) row.pic = e.target.value;
   else if(e.target.classList.contains('ai-due')) row.dueDate = e.target.value;
+  else if(e.target.classList.contains('ai-status')) row.status = e.target.value;
 });
 document.getElementById('f_actionItemsList').addEventListener('click', e=>{
   const btn = e.target.closest('.ai-remove');
@@ -3112,7 +3145,9 @@ document.getElementById('btnSaveRca').addEventListener('click', ()=>{
   const rcaNumber = f('f_rcaNumber');
   if(!rcaNumber){ toast('Vui lòng nhập RCA Number'); return; }
   const fourM = [...document.querySelectorAll('#f_fourM_group input:checked')].map(cb=>cb.value).join('\n');
-  const finalActionRows = editingActionItems.filter(r=>r.content && r.content.trim());
+  const filledRows = editingActionItems.filter(r=>r.content && r.content.trim());
+  const rowStatus = Object.fromEntries(filledRows.map(r=>[r.id, r.status||'On Progress']));
+  const finalActionRows = filledRows.map(({status, ...rest})=>rest);
   const actionText = finalActionRows.map((r,i)=> (finalActionRows.length>1? `${i+1}. `:'') + r.content.trim()).join('\n');
   const data = {
     rcaNumber, status: f('f_status'), function: f('f_function'), dept: f('f_dept'),
@@ -3136,6 +3171,9 @@ document.getElementById('btnSaveRca').addEventListener('click', ()=>{
     toast('Đã thêm RCA ' + rcaNumber);
   }
   syncActionItemsToActionPlan(rec);
+  state.actionList.forEach(a=>{
+    if(rowStatus[a.id] && rowStatus[a.id]!==(a.status||'On Progress')) applyActionStatus(a, rowStatus[a.id]);
+  });
   persist();
   populateDynamicLists();
   renderRcaTable();
