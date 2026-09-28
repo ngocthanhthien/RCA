@@ -1423,7 +1423,9 @@ document.getElementById('btnDoLogin').addEventListener('click', ()=>{
    - Hồ sơ quyền: rca_users/{uid} = {username, email, displayName, leaderName, role: viewer|leader|admin, active, shared}.
    Quyền thật do Firestore Rules kiểm tra (file firestore.rules); UI chỉ ẩn/hiện.
    Để FIREBASE_CONFIG = null → chạy như cũ (localStorage + mật khẩu Admin cục bộ / Leader chọn tên). */
-const FIREBASE_CONFIG = null; // Firebase Console → Project settings → Your apps → Web app → firebaseConfig
+const FIREBASE_CONFIG = {apiKey:'AIzaSyDGvImdXbSHYfQbyU73PRl_ZkAUYsrq1m4', authDomain:'rca-tracking-ild.firebaseapp.com',
+  projectId:'rca-tracking-ild', storageBucket:'rca-tracking-ild.firebasestorage.app', messagingSenderId:'726621014312',
+  appId:'1:726621014312:web:0302b5f72ab1131865a81d'}; // Firebase Console → Project settings → Your apps → Web app "RCA Tracking Web"
 const CLOUD_OWNER_EMAIL = 'dangthanhbinh53@gmail.com'; // chủ dự án: luôn là Admin (đăng nhập Google)
 const FIREBASE_SDK = 'https://www.gstatic.com/firebasejs/12.19.0/';
 const USERS_COL = 'rca_users', RCA_COL = 'rca_records', ACT_COL = 'rca_actions', META_COL = 'rca_meta';
