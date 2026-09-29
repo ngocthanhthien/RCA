@@ -148,14 +148,6 @@ Bật khi hằng `FIREBASE_CONFIG` (section **CLOUD**, ngay sau AUTH) có `apiKe
 
 ---
 
-## 5c. Nhận diện ILD Crafted (29/09/2026)
-
-Giao diện theo quy chuẩn ILD Crafted (`ILD-Crafted-Design-System.md`). Chỉ chỉnh CSS + logo, **không đổi JavaScript/ID/class/nội dung**:
-- Biến màu `:root` ánh xạ sang tokens Crafted (espresso `#382E28`, nền `#F8F5F0`, viền `#DED5CA`, trạng thái xanh lá/xanh dương/hổ phách/đỏ sẫm/xám); dark mode giữ bảng màu tối cũ.
-- Khối CSS "ILD CRAFTED — lớp trình bày" ở cuối `<style>` ghi đè hình thức: header trắng có logo, tab nền linen + vạch đỏ, nút/ô nhập bo 6px, khối bo 14px, dialog 18px, chữ Segoe UI 14px, focus xanh `#2563EB`.
-- Logo ILD (từ `ILD-logo-WYBRANE.PNG`, 164×96 px) nhúng base64 ở header và màn hình đăng nhập, thay biểu tượng ☕.
-- Chưa đổi (nằm trong JS): màu donut/biểu đồ (`STATUS_COLORS`), mẫu email báo cáo `.eml`, báo cáo PDF/Excel.
-
 ## 6. Tính năng theo tab
 
 - **📊 Tổng quan** — KPI, biểu đồ (donut trạng thái, cột theo Function/Category/tháng), danh sách action sắp/đã quá hạn, nút "Gửi email báo cáo" (tải file `.eml` có biểu đồ PNG canvas nhúng base64 + bảng đầy đủ, không cần hỏi/xem trước).

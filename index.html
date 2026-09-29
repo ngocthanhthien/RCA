@@ -5,41 +5,30 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>RCA Tracking App</title>
 <style>
-/* ILD Crafted — bộ màu/kích thước dùng chung (ild-crafted-tokens.css v1.0) ánh xạ vào biến sẵn có của app */
 :root{
-  --ild-brand:#E30613;
-  --ild-espresso:#382E28;
-  --ild-espresso-hover:#514135;
-  --ild-linen:#F1EADF;
-  --ild-selected:#E5D8C8;
-  --ild-input-border:#99897A;
-  --ild-focus:#2563EB;
-  --ild-neutral:#475467;
-  --ild-neutral-bg:#F2F4F7;
-  --ild-font-ui:"Segoe UI",Arial,sans-serif;
-  --bg:#F8F5F0;
-  --panel:#FFFFFF;
-  --panel-2:#FFFEFC;
-  --border:#DED5CA;
-  --text:#382E28;
-  --muted:#73665B;
-  --accent:#382E28;
-  --accent-2:#514135;
-  --accent-3:#167044;
-  --accent-soft:#F1EADF;
-  --ok:#167044;
-  --ok-bg:#ECFDF3;
-  --warn:#925D08;
-  --warn-bg:#FFFAEB;
-  --bad:#B91C1C;
-  --bad-bg:#FFF1F2;
-  --info:#1D4ED8;
-  --info-bg:#EFF6FF;
-  --gradient-accent:var(--accent);
-  --shadow:0 1px 2px rgb(56 46 40 / 6%);
-  --shadow-lg:0 12px 36px rgb(56 46 40 / 14%);
-  --radius:14px;
-  --radius-sm:6px;
+  --bg:#f7f0e6;
+  --panel:#ffffff;
+  --panel-2:#fbf4e8;
+  --border:#e6d6ba;
+  --text:#2a2018;
+  --muted:#6b5842;
+  --accent:#8a5a2f;
+  --accent-2:#d3a24a;
+  --accent-3:#3f7d5c;
+  --accent-soft:#f6e8cf;
+  --ok:#2f9e5b;
+  --ok-bg:#e2f7ea;
+  --warn:#c07f0a;
+  --warn-bg:#fdf0d6;
+  --bad:#c1392b;
+  --bad-bg:#fce7e3;
+  --info:#2f6690;
+  --info-bg:#e7f1fa;
+  --gradient-accent:linear-gradient(135deg,var(--accent) 0%,var(--accent-2) 100%);
+  --shadow:0 3px 12px rgba(122,79,30,0.12),0 1px 3px rgba(122,79,30,0.10);
+  --shadow-lg:0 16px 40px rgba(122,79,30,0.20),0 4px 12px rgba(122,79,30,0.12);
+  --radius:16px;
+  --radius-sm:11px;
 }
 @media (prefers-color-scheme: dark){
   :root:not([data-theme="light"]){
@@ -61,12 +50,7 @@
     --bad-bg:#3a211e;
     --info:#8fb8e2;
     --info-bg:#1e2c3a;
-    --gradient-accent:var(--accent);
-    --ild-linen:#2c2318;
-    --ild-selected:#3d2f1c;
-    --ild-input-border:#6b5a45;
-    --ild-neutral:#cbd5e1;
-    --ild-neutral-bg:#2a2f36;
+    --gradient-accent:linear-gradient(135deg,var(--accent) 0%,var(--accent-2) 100%);
     --shadow:0 3px 14px rgba(0,0,0,0.35);
     --shadow-lg:0 16px 40px rgba(0,0,0,0.45);
   }
@@ -90,12 +74,7 @@
   --bad-bg:#3a211e;
   --info:#8fb8e2;
   --info-bg:#1e2c3a;
-  --gradient-accent:var(--accent);
-  --ild-linen:#2c2318;
-  --ild-selected:#3d2f1c;
-  --ild-input-border:#6b5a45;
-  --ild-neutral:#cbd5e1;
-  --ild-neutral-bg:#2a2f36;
+  --gradient-accent:linear-gradient(135deg,var(--accent) 0%,var(--accent-2) 100%);
   --shadow:0 3px 14px rgba(0,0,0,0.35);
   --shadow-lg:0 16px 40px rgba(0,0,0,0.45);
 }
@@ -464,145 +443,6 @@ button.user-pill:hover{background:rgba(255,255,255,0.3);}
 #view-users .user-actions{display:flex;gap:4px;flex-wrap:wrap;}
 .cloud-status-grid{display:grid;grid-template-columns:auto 1fr;gap:6px 14px;font-size:14.5px;margin-bottom:12px;}
 .cloud-status-grid span:nth-child(odd){color:var(--muted);font-weight:800;}
-
-/* =====================================================================
-   ILD CRAFTED — lớp trình bày (chỉ màu, chữ, viền, bo góc, khoảng cách).
-   Không đổi selector/ID/hành vi; ghi đè các khai báo hình thức ở trên theo thứ tự nguồn.
-   ===================================================================== */
-body{font-family:var(--ild-font-ui);font-size:14px;line-height:1.5;font-weight:400;}
-h1,h2,h3{font-weight:600;}
-
-/* header trắng: logo + tên app + tài khoản */
-header.topbar{
-  background:var(--panel);color:var(--text);box-shadow:none;border-bottom:1px solid var(--border);
-  padding:10px 24px;
-}
-.brand{gap:16px;}
-.brand .logo{
-  width:auto;height:auto;border-radius:0;box-shadow:none;background:#fff;padding:4px 6px;
-}
-.brand .logo img{display:block;height:30px;width:auto;}
-.brand > div:last-child{border-left:1px solid var(--border);padding-left:16px;}
-.brand h1{font-size:18px;font-weight:600;letter-spacing:0;color:var(--text);}
-.brand small{font-size:12px;font-weight:400;opacity:1;color:var(--muted);}
-.font-controls{background:var(--panel);border:1px solid var(--border);border-radius:var(--radius-sm);}
-.font-controls button{color:var(--text);font-weight:600;font-size:13px;border-radius:4px;}
-.font-controls button:hover{background:var(--accent-soft);}
-.font-controls .scale-label{color:var(--muted);font-weight:600;}
-.font-controls .bold-toggle.active{background:var(--ild-selected);}
-.btn-ghost{background:var(--panel);border-color:var(--border);color:var(--text);box-shadow:none;}
-.btn-ghost:hover{background:var(--accent-soft);color:var(--text);}
-.user-pill{background:var(--panel-2);border:1px solid var(--border);border-radius:var(--radius-sm);color:var(--text);font-size:13px;font-weight:600;}
-button.user-pill:hover{background:var(--accent-soft);}
-.user-pill .role-tag{background:var(--text);color:var(--panel);border-radius:4px;font-size:11px;font-weight:600;}
-
-/* thanh tab: nền linen, mục đang chọn nền #E5D8C8 + vạch đỏ mảnh */
-.tabs{background:var(--ild-linen);border-bottom:1px solid var(--border);padding:6px 16px;gap:2px;}
-.tab-btn{color:var(--muted);font-size:14px;font-weight:500;border-radius:var(--radius-sm);padding:9px 16px;}
-.tab-btn:hover{background:var(--ild-selected);color:var(--text);}
-.tab-btn.active{background:var(--ild-selected);color:var(--text);font-weight:600;box-shadow:inset 0 -2px 0 var(--ild-brand);}
-
-/* nút */
-.btn{border:1px solid var(--border);border-radius:var(--radius-sm);font-size:14px;font-weight:600;padding:8px 14px;box-shadow:none;}
-.btn:hover{border-color:var(--ild-input-border);color:var(--text);background:var(--accent-soft);transform:none;box-shadow:none;}
-.btn:active{transform:translateY(1px);box-shadow:none;}
-.btn-primary{background:var(--accent);border-color:var(--accent);color:#fff;}
-.btn-primary:hover{background:var(--accent-2);border-color:var(--accent-2);color:#fff;filter:none;}
-.btn-sm{padding:6px 11px;font-size:13px;border-radius:var(--radius-sm);}
-.btn-danger{color:var(--bad);}
-.btn-danger:hover{border-color:var(--bad);color:var(--bad);background:var(--bad-bg);}
-
-/* khối nội dung, KPI */
-.panel{border:1px solid var(--border);border-radius:var(--radius);padding:20px 24px;box-shadow:var(--shadow);}
-.panel h2{font-size:18px;font-weight:600;}
-.panel h2 .count{font-weight:400;font-size:14px;}
-.kpi-card{border:1px solid var(--border);border-left:3px solid var(--accent);box-shadow:var(--shadow);background:var(--panel);}
-.kpi-card:hover{transform:none;box-shadow:var(--shadow);}
-.kpi-card .label{font-size:12px;font-weight:600;letter-spacing:.3px;}
-.kpi-card .value{font-size:30px;font-weight:600;font-variant-numeric:tabular-nums;}
-.kpi-card .sub{font-size:12px;font-weight:400;}
-.kpi-card.accentline,.kpi-card.ok,.kpi-card.warn,.kpi-card.bad{background:var(--panel);}
-.barrow{font-size:13px;font-weight:400;}
-.barrow .val{font-weight:600;font-variant-numeric:tabular-nums;}
-.bartrack{border-radius:3px;height:12px;}
-.barfill{background:var(--accent);border-radius:3px;}
-.donut-legend{font-size:13px;font-weight:400;}
-
-/* ô nhập: viền #99897A, bo 6px, focus xanh rõ */
-.toolbar input[type=text],.toolbar input[type=search],select,.field input,.field select,.field textarea,.msel-btn,.auth-card input{
-  border:1px solid var(--ild-input-border);border-radius:var(--radius-sm);font-size:14px;font-weight:400;
-}
-.toolbar input[type=text]:focus,.toolbar input[type=search]:focus,select:focus,.field input:focus,.field select:focus,.field textarea:focus,.auth-card input:focus{
-  border-color:var(--text);box-shadow:none;
-}
-.msel-btn{font-weight:400;}
-.msel-btn.has-filter{border-color:var(--text);color:var(--text);background:var(--ild-selected);font-weight:600;}
-.msel-panel{border:1px solid var(--border);border-radius:var(--radius-sm);}
-.msel-opt{font-weight:400;}
-.field label{font-size:13px;font-weight:600;}
-.field small{font-weight:400;}
-.chip-count{background:var(--ild-selected);color:var(--text);font-size:12px;font-weight:600;}
-button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible,[tabindex]:focus-visible{
-  outline:2px solid var(--ild-focus);outline-offset:2px;
-}
-
-/* bảng: nền trắng, tiêu đề ấm rất nhạt, đường ngang mảnh */
-.table-wrap{border:1px solid var(--border);border-radius:var(--radius);background:var(--panel);}
-table{font-size:14px;}
-thead th{background:var(--panel-2);border-bottom:1px solid var(--border);font-size:12px;font-weight:600;color:var(--muted);letter-spacing:.3px;padding:11px 12px;}
-tbody td{font-weight:400;padding:10px 12px;}
-tbody tr:hover{background:var(--panel-2);}
-tbody tr.exp-row{background:var(--bg);}
-.sortable-th:hover{color:var(--text);background:var(--ild-linen);}
-.sortable-th.sorted{color:var(--text);}
-.expand-toggle{color:var(--text);}
-
-/* trạng thái: xám / xanh dương / hổ phách / xanh lá / đỏ sẫm — luôn kèm nhãn chữ như cũ */
-.badge{font-size:12px;font-weight:600;padding:3px 10px;box-shadow:none;}
-.badge-muted{background:var(--ild-neutral-bg);color:var(--ild-neutral);}
-.empty-note{font-weight:400;}
-
-/* modal / dialog */
-.modal{border:1px solid var(--border);border-radius:18px;box-shadow:var(--shadow-lg);}
-.modal-head{background:var(--panel);border-bottom:1px solid var(--border);}
-.modal-head h3{font-size:18px;font-weight:600;}
-.modal-foot{border-top:1px solid var(--border);}
-.action-item-row{border-radius:var(--radius-sm);}
-.tag-chip{background:var(--ild-linen);color:var(--text);font-size:13px;font-weight:500;}
-.tag-chip button{color:var(--muted);}
-.login-tab-btn{font-weight:600;font-size:14px;}
-.login-tab-btn.active{background:var(--accent);color:#fff;}
-.readonly-banner{border:1px solid #F5D9A6;border-radius:var(--radius-sm);font-size:14px;font-weight:600;}
-.locked-note{font-weight:400;}
-.evidence-row{border-bottom:1px solid var(--border);font-size:14px;font-weight:400;}
-.evidence-status-box{border:1px solid var(--border);border-radius:var(--radius-sm);font-size:14px;font-weight:400;}
-.view-row{font-size:14px;}
-.view-row .view-label{font-weight:600;}
-.view-row .view-val{font-weight:600;}
-.view-block .view-label{color:var(--muted);font-weight:600;font-size:12px;}
-.view-text{font-size:14px;font-weight:400;border-radius:var(--radius-sm);}
-.section-divider{color:var(--muted);font-size:12px;font-weight:600;border-top:1px dashed var(--border);}
-
-/* hướng dẫn sử dụng */
-.guide-nav a{border:1px solid var(--border);font-weight:500;}
-.guide-nav a:hover{border-color:var(--ild-input-border);color:var(--text);}
-.guide-steps li b{color:var(--text);}
-.guide-steps li::before{background:var(--accent);font-weight:600;}
-.guide-callout{border-radius:var(--radius-sm);}
-.guide-faq{border-radius:var(--radius-sm);}
-
-/* màn hình đăng nhập */
-.auth-card{border:1px solid var(--border);border-radius:18px;box-shadow:var(--shadow-lg);}
-.auth-card .auth-logo{width:auto;height:auto;background:#fff;border-radius:0;padding:8px 12px;}
-.auth-card .auth-logo img{display:block;height:40px;width:auto;}
-.auth-card h2{font-weight:600;}
-.auth-card .auth-link{color:var(--text);text-decoration:underline;font-weight:500;}
-
-footer.foot{font-size:12px;font-weight:400;}
-@media (prefers-reduced-motion: reduce){
-  .view.active{animation:none;}
-  html{scroll-behavior:auto;}
-}
 </style>
 </head>
 <body>
@@ -610,7 +450,7 @@ footer.foot{font-size:12px;font-weight:400;}
 
 <header class="topbar">
   <div class="brand">
-    <div class="logo"><img src="data:image/png;base64,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" alt="ILD" width="51" height="30"></div>
+    <div class="logo">☕</div>
     <div>
       <h1>RCA Tracking App</h1>
       <small>Quản lý Root Cause Analysis &amp; Corrective Action — ILD Coffee Vietnam</small>
@@ -1305,7 +1145,7 @@ footer.foot{font-size:12px;font-weight:400;}
 <!-- Màn hình đăng nhập (chế độ Firebase) -->
 <div class="auth-gate" id="authGate">
   <div class="auth-card">
-    <div class="auth-logo"><img src="data:image/png;base64,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" alt="ILD" width="68" height="40"></div>
+    <div class="auth-logo">☕</div>
     <h2>RCA Tracking App</h2>
     <p class="auth-sub" id="gateSub">Đang kết nối…</p>
     <div id="gateUserRow" style="display:none;"><input id="gateUser" placeholder="Tên đăng nhập" autocomplete="username" autocapitalize="off"></div>
